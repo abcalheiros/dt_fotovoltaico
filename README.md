@@ -1,7 +1,7 @@
 # dt_fotovoltaico
 O foco deste projeto é realizar uma simulação computacional de um sistema fotovoltaico e torná-la o mais real possível. Assim, o estudo contempla a comparação com dados reais bem como a análise das condições de radiação solar no local de instalação do sistema.
 
-# Simulação
+# simulação
 
 A ferramenta utilizada para realizar a modelagem foi o Blender, software livre de criação 3D que permite modelagem, simulação e renderização. Apesar de ser comumente utilizado para animações digitais e design de jogos, o blender possui uma interface gráfica intuitiva e suporte a linguagem de programação python, permitindo a implementação de scripts.
 (Documentação do blender - https://docs.blender.org/manual/en/latest/getting_started/about/index.html)
