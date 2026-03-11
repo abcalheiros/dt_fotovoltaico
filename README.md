@@ -2,8 +2,8 @@
 ![Blender](https://img.shields.io/badge/Blender-4.5-orange)
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![Status](https://img.shields.io/badge/status-em%20desenvolvimento-green)
-![Projeto](https://img.shields.io/badge/projeto-simula%C3%A7%C3%A3o%20fotovoltaica-yellow)
 ![Stars](https://img.shields.io/github/stars/abcalheiros/dt_fotovoltaico)
+
 O foco deste projeto é realizar uma simulação computacional de um sistema fotovoltaico e torná-la o mais real possível. Assim, o estudo contempla a comparação com dados reais bem como a análise das condições de radiação solar no local de instalação do sistema.
 
 # simulação
