@@ -1,4 +1,9 @@
 # dt_fotovoltaico
+![Blender](https://img.shields.io/badge/Blender-4.5-orange)
+![Python](https://img.shields.io/badge/Python-3.12-blue)
+![Status](https://img.shields.io/badge/status-em%20desenvolvimento-green)
+![Projeto](https://img.shields.io/badge/projeto-simula%C3%A7%C3%A3o%20fotovoltaica-yellow)
+![Stars](https://img.shields.io/github/stars/abcalheiros/dt_fotovoltaico)
 O foco deste projeto é realizar uma simulação computacional de um sistema fotovoltaico e torná-la o mais real possível. Assim, o estudo contempla a comparação com dados reais bem como a análise das condições de radiação solar no local de instalação do sistema.
 
 # simulação
@@ -10,8 +15,3 @@ A ferramenta utilizada para realizar a modelagem foi o Blender, software livre d
 Além disso, conta com complementos como o sun position, que possui o intuito de simular uma iluminação mais natural para a cena. Assim, a posição do sol é calculada a partir das entradas de latitude, longitude e dia do ano. E o próprio programa gera como saída além da animação do sol, os dados do nascer, pôr do sol, ângulo de elevação e azimute solar, pois é baseado na calculadora solar do NOAA Global Monitoring Laboratory.
 (Documentação do sun position - https://docs.blender.org/manual/en/2.83/addons/lighting/sun_position.html)
 
-![Python](https://img.shields.io/badge/Python-3.12-blue)
-![Blender](https://img.shields.io/badge/Blender-4.5-orange)
-![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)
-![Projeto](https://img.shields.io/badge/projeto-simula%C3%A7%C3%A3o%20fotovoltaica-yellow)
-![Stars](https://img.shields.io/github/stars/abcalheiros/dt_fotovoltaico)
