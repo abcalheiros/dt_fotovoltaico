@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supervisório Sistema Fotovoltaico</title>
+  
+  <!-- Renderizador 3D do Google -->
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+  
+  <!-- Biblioteca de Gráficos (Chart.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+    
+    /* Configuração do fundo da página caso queira a imagem no background geral */
+    body { 
+      background-color: #f4f4f9; 
+      color: #222; 
+      padding: 25px 40px; 
+    }
+
+    /* Cabeçalho */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #ccc;
+      padding-bottom: 12px;
+      margin-bottom: 30px;
+    }
+
+    .title-area h1 { font-size: 24px; font-weight: bold; }
+    
+    .btn-back {
+      font-size: 24px;
+      cursor: pointer;
+      text-decoration: none;
+      color: #000;
+      display: inline-block;
+      margin-top: 5px;
+      font-weight: bold;
+      transition: transform 0.2s;
+    }
+    .btn-back:hover { transform: translateX(-4px); }
+
+    .header-right { text-align: right; }
+    .datetime { font-size: 18px; font-weight: bold; }
+    .sun-times { font-size: 14px; font-weight: 600; margin-top: 5px; color: #444; }
+    .orange-text { color: #ff5500; }
+
+    /* Título Usina Selecionada */
+    .selected-usina-title {
+      color: #ff5500;
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    /* TELA 1: Visão Geral (3 Usinas) */
+    #page-home { display: block; }
+    
+    .grid-usinas {
+      display: flex;
+      justify-content: space-between;
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    .usina-card {
+      flex: 1;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .usina-card:hover { transform: translateY(-4px); }
+
+    /* Estilo atualizado do model-viewer com o mapa de fundo */
+    model-viewer {
+      width: 100%;
+      height: 230px;
+      background-color: #1a1a1a;
+      border-radius: 6px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+
+    .usina-card h2 { color: #ff5500; font-size: 20px; margin: 15px 0 10px 0; }
+
+    .metrics-summary {
+      text-align: center;
+      line-height: 1.5;
+      font-weight: bold;
+      font-size: 15px;
+      color: #111;
+    }
+
+    /* TELA 2: Detalhes da Usina */
+    #page-detail { display: none; }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .detail-3d-box { width: 100%; }
+    .detail-3d-box model-viewer { height: 380px; }
+
+    .chart-box {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      transition: box-shadow 0.2s;
+    }
+    .chart-box:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+    .chart-box h4 { font-size: 15px; font-weight: bold; margin-bottom: 8px; color: #111; }
+    .chart-box canvas { width: 100% !important; height: 140px !important; }
+
+    /* Rodapé */
+    footer {
+      border-top: 2px solid #ccc;
+      padding-top: 20px;
+      margin-top: 40px;
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+    }
+
+    .footer-col h3 { color: #ff5500; font-size: 13px; margin-bottom: 8px; }
+    .footer-col p { font-size: 12px; font-weight: 600; line-height: 1.4; color: #444; }
+
+    /* MODAL DE EXPANSÃO DO GRÁFICO */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background-color: #fff;
+      padding: 25px;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 900px;
+      position: relative;
+    }
+    .close-modal {
+      position: absolute;
+      top: 10px; right: 15px;
+      font-size: 28px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #666;
+    }
+    .modal-content canvas { width: 100% !important; height: 420px !important; }
+  </style>
+</head>
+<body>
+
+  <!-- Cabeçalho -->
+  <header>
+    <div class="title-area">
+      <h1>Supervisório Sistema Fotovoltaico</h1>
+      <a id="btn-back" class="btn-back" style="display: none;" onclick="mostrarHome()">←</a>
+    </div>
+    <div class="header-right">
+      <div class="datetime">
+        <span class="orange-text">Data</span> <span id="real-date">09/10/2026</span>
+        <span class="orange-text">Hora</span> <span id="real-time">10:48</span>
+      </div>
+      <div id="sun-info" class="sun-times" style="display: none;">
+        Nascer do Sol 5:35<br>Pôr do Sol 17:11
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= TELA 1: VISÃO GERAL (3 USINAS) ================= -->
+  <main id="page-home">
+    <div class="grid-usinas">
+      
+      <!-- Usina 01 -->
+      <div class="usina-card" onclick="abrirUsina('Usina 01')">
+        <!-- Adicionado skybox-image e environment-image apontando para o seu arquivo .hdr / imagem do ambiente -->
+        <model-viewer src="dmpv.glb" 
+                      skybox-image="background.hdr" 
+                      environment-image="background.hdr" 
+                      auto-rotate 
+                      autoplay 
+                      shadow-intensity="1">
+        </model-viewer>
+        <h2>Usina 01</h2>
+        <div class="metrics-summary">
+          <p>Incidência</p>
+          <p>Elevação Solar</p>
+          <p>Azimute Solar</p>
+          <p>Temperatura</p>
+          <p>Radiação</p>
+          <p>Potência</p>
+        </div>
+      </div>
+
+      <!-- Usina 02 -->
+      <div class="usina-card" onclick="abrirUsina('Usina 02')">
+        <model-viewer src="dmpv.glb" 
+                      skybox-image="background.hdr" 
+                      environment-image="background.hdr" 
+                      auto-rotate 
+                      autoplay 
+                      shadow-intensity="1">
+        </model-viewer>
+        <h2>Usina 02</h2>
+        <div class="metrics-summary">
+          <p>Incidência</p>
+          <p>Elevação Solar</p>
+          <p>Azimute Solar</p>
+          <p>Temperatura</p>
+          <p>Radiação</p>
+          <p>Potência</p>
+        </div>
+      </div>
+
+      <!-- Usina 03 -->
+      <div class="usina-card" onclick="abrirUsina('Usina 03')">
+        <model-viewer src="dmpv.glb" 
+                      skybox-image="background.hdr" 
+                      environment-image="background.hdr" 
+                      auto-rotate 
+                      autoplay 
+                      shadow-intensity="1">
+        </model-viewer>
+        <h2>Usina 03</h2>
+        <div class="metrics-summary">
+          <p>Incidência</p>
+          <p>Elevação Solar</p>
+          <p>Azimute Solar</p>
+          <p>Temperatura</p>
+          <p>Radiação</p>
+          <p>Potência</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ================= TELA 2: VISÃO DETALHADA DA USINA ================= -->
+  <main id="page-detail">
+    <div id="usina-title-display" class="selected-usina-title">Usina 01</div>
+
+    <div class="detail-grid">
+      <!-- Lado Esquerdo: Animação 3D da Usina Selecionada -->
+      <div class="detail-3d-box">
+        <model-viewer src="dmpv.glb" 
+                      skybox-image="background.hdr" 
+                      environment-image="background.hdr" 
+                      camera-controls 
+                      auto-rotate 
+                      autoplay 
+                      shadow-intensity="1">
+        </model-viewer>
+      </div>
+
+      <!-- Coluna do Meio: Temperatura, Elevação Solar, Azimute Solar -->
+      <div style="display: flex; flex-direction: column; gap: 15px;">
+        <div class="chart-box" onclick="expandirGrafico('Temperatura', 'temp')">
+          <h4>Temperatura</h4>
+          <canvas id="c-temp"></canvas>
+        </div>
+        <div class="chart-box" onclick="expandirGrafico('Elevação Solar', 'elevacao')">
+          <h4>Elevação Solar</h4>
+          <canvas id="c-elevacao"></canvas>
+        </div>
+        <div class="chart-box" onclick="expandirGrafico('Azimute Solar', 'azimute')">
+          <h4>Azimute Solar</h4>
+          <canvas id="c-azimute"></canvas>
+        </div>
+      </div>
+
+      <!-- Coluna da Direita: Radiação, Potência, Incidência -->
+      <div style="display: flex; flex-direction: column; gap: 15px;">
+        <div class="chart-box" onclick="expandirGrafico('Radiação', 'radiacao')">
+          <h4>Radiação</h4>
+          <canvas id="c-radiacao"></canvas>
+        </div>
+        <div class="chart-box" onclick="expandirGrafico('Potência', 'potencia')">
+          <h4>Potência</h4>
+          <canvas id="c-potencia"></canvas>
+        </div>
+        <div class="chart-box" onclick="expandirGrafico('Incidência', 'incidencia')">
+          <h4>Incidência</h4>
+          <canvas id="c-incidencia"></canvas>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Rodapé -->
+  <footer>
+    <div class="footer-col">
+      <h3>Dados da unidade</h3>
+      <p>Coordenadas<br>9,66 S<br>35,72 W</p>
+      <p>Nº de Placas<br>17</p>
+    </div>
+    <div class="footer-col">
+      <h3>Dados da placa</h3>
+      <p>Fabricante</p>
+      <p>Potência</p>
+      <p>Temperatura da célula</p>
+    </div>
+    <div class="footer-col">
+      <h3>Dados do inversor</h3>
+    </div>
+  </footer>
+
+  <!-- Modal para Visualização Expandida do Gráfico -->
+  <div id="modal-chart" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="fecharModal()">&times;</span>
+      <h3 id="modal-title" style="margin-bottom: 15px; text-align: center; color: #ff5500;"></h3>
+      <canvas id="c-modal"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // 1. NAVEGAÇÃO ENTRE PAGINAS
+    function abrirUsina(nomeUsina) {
+      document.getElementById('page-home').style.display = 'none';
+      document.getElementById('page-detail').style.display = 'block';
+      document.getElementById('btn-back').style.display = 'inline-block';
+      document.getElementById('sun-info').style.display = 'block';
+      document.getElementById('usina-title-display').innerText = nomeUsina;
+    }
+
+    function mostrarHome() {
+      document.getElementById('page-detail').style.display = 'none';
+      document.getElementById('page-home').style.display = 'block';
+      document.getElementById('btn-back').style.display = 'none';
+      document.getElementById('sun-info').style.display = 'none';
+    }
+
+    // 2. ATUALIZAÇÃO DO RELÓGIO
+    function atualizarRelogio() {
+      const agora = new Date();
+      document.getElementById('real-date').innerText = agora.toLocaleDateString('pt-BR');
+      document.getElementById('real-time').innerText = agora.toLocaleTimeString('pt-BR');
+    }
+    setInterval(atualizarRelogio, 1000);
+    atualizarRelogio();
+
+    // 3. CONFIGURAÇÃO E PLOTAGEM DOS GRÁFICOS (CHART.JS)
+    const datasetsData = {
+      labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+      temp: [22, 21, 20, 20, 21, 23, 26, 30, 35, 40, 44, 48, 50, 49, 45, 41, 36, 31, 27, 25, 24, 23, 22, 22],
+      radiacao: [0, 0, 0, 0, 0, 50, 200, 450, 700, 880, 980, 1020, 990, 910, 750, 500, 250, 60, 0, 0, 0, 0, 0, 0],
+      potencia: [0, 0, 0, 0, 0, 0.2, 1.1, 2.5, 3.8, 4.8, 5.3, 5.5, 5.4, 4.9, 4.1, 2.7, 1.3, 0.3, 0, 0, 0, 0, 0, 0],
+      elevacao: [0, 0, 0, 0, 0, 5, 18, 32, 47, 62, 76, 85, 78, 64, 49, 34, 19, 6, 0, 0, 0, 0, 0, 0],
+      azimute: [0, 0, 0, 0, 0, 70, 75, 82, 92, 108, 140, 180, 220, 250, 265, 275, 282, 288, 0, 0, 0, 0, 0, 0],
+      incidencia: [90, 90, 90, 90, 90, 85, 72, 58, 43, 28, 14, 5, 12, 26, 41, 56, 71, 84, 90, 90, 90, 90, 90, 90]
+    };
+
+    function criarGrafico(canvasId, label, dataArray, color) {
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      return new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: datasetsData.labels,
+          datasets: [{
+            label: label,
+            data: dataArray,
+            borderColor: color,
+            borderWidth: 1.5,
+            pointRadius: 0,
+            tension: 0.3,
+            fill: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 8 } } },
+            y: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 8 } } }
+          }
+        }
+      });
+    }
+
+    // Inicializar mini gráficos
+    const gTemp = criarGrafico('c-temp', 'Temperatura (°C)', datasetsData.temp, '#a855f7');
+    const gRad = criarGrafico('c-radiacao', 'Radiação (W/m²)', datasetsData.radiacao, '#a855f7');
+    const gPot = criarGrafico('c-potencia', 'Potência (kW)', datasetsData.potencia, '#a855f7');
+    const gElev = criarGrafico('c-elevacao', 'Elevação Solar (°)', datasetsData.elevacao, '#2563eb');
+    const gAzim = criarGrafico('c-azimute', 'Azimute Solar (°)', datasetsData.azimute, '#2563eb');
+    const gInci = criarGrafico('c-incidencia', 'Incidência (°)', datasetsData.incidencia, '#2563eb');
+
+    // 4. EXPANSÃO DOS GRÁFICOS NO MODAL
+    let modalChartInstance = null;
+
+    function expandirGrafico(titulo, chave) {
+      document.getElementById('modal-chart').style.display = 'flex';
+      document.getElementById('modal-title').innerText = titulo;
+
+      const ctxModal = document.getElementById('c-modal').getContext('2d');
+      if (modalChartInstance) modalChartInstance.destroy();
+
+      const cor = ['elevacao', 'azimute', 'incidencia'].includes(chave) ? '#2563eb' : '#a855f7';
+
+      modalChartInstance = new Chart(ctxModal, {
+        type: 'line',
+        data: {
+          labels: datasetsData.labels,
+          datasets: [{
+            label: titulo,
+            data: datasetsData[chave],
+            borderColor: cor,
+            borderWidth: 2,
+            pointRadius: 3,
+            tension: 0.3,
+            fill: true,
+            backgroundColor: cor === '#2563eb' ? 'rgba(37, 99, 235, 0.1)' : 'rgba(168, 85, 247, 0.1)'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { title: { display: true, text: 'Horário do Dia' } },
+            y: { title: { display: true, text: 'Valor' } }
+          }
+        }
+      });
+    }
+
+    function fecharModal() {
+      document.getElementById('modal-chart').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

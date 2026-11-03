@@ -1,0 +1,115 @@
+import bpy
+import math
+import csv
+from mathutils import Vector
+from datetime import datetime, timedelta
+
+# ===============================
+# CONFIGURAÇÃO
+# ===============================
+
+caminho_arquivo = bpy.path.abspath("//dmpv.csv")
+
+# Acessa as propriedades do Sun Position
+sun_props = bpy.context.scene.sun_pos_properties
+
+# Obtém a data configurada na interface
+dia = sun_props.day
+mes = sun_props.month
+ano = sun_props.year
+
+# Função auxiliar para converter a hora decimal do Sun Position para datetime
+def decimal_para_datetime(ano, mes, dia, hora_decimal):
+    horas = int(hora_decimal)
+    minutos_dec = (hora_decimal - horas) * 60
+    minutos = int(minutos_dec)
+    segundos = int((minutos_dec - minutos) * 60)
+    return datetime(ano, mes, dia, horas, minutos, segundos)
+
+# Hora inicial e final calculadas usando sunrise_time e sunset_time
+hora_inicio = decimal_para_datetime(ano, mes, dia, sun_props.sunrise_time)
+hora_fim    = decimal_para_datetime(ano, mes, dia, sun_props.sunset_time)
+
+# Número total de minutos
+total_minutos = int((hora_fim - hora_inicio).total_seconds() / 60) + 1
+
+# ===============================
+# FUNÇÕES DE VETOR
+# ===============================
+
+def direcao_sol(sol):
+    # eixo -Z aponta para a Terra no objeto Sol
+    return (sol.matrix_world.to_quaternion() @ Vector((0, 0, -1))).normalized()
+
+def normal_painel(painel):
+    return (painel.matrix_world.to_quaternion() @ Vector((0, 0, -1))).normalized()
+
+# ===============================
+# OBJETOS
+# ===============================
+
+sol = bpy.data.objects["Sol"]
+painel = bpy.data.objects["Planta"]
+
+# ===============================
+# CSV
+# ===============================
+
+with open(caminho_arquivo, "w", newline="", encoding="utf-8") as arquivo_csv:
+    escritor = csv.writer(arquivo_csv)
+    escritor.writerow([
+        "Frame",
+        "Hora Solar",
+        "Ângulo de Incidência (°)",
+        "Elevação (°)",
+        "Azimute (°)"
+    ])
+
+    for i in range(total_minutos):
+
+        frame = i + 1
+        bpy.context.scene.frame_set(frame)
+
+        # -------------------------------
+        # HORA SOLAR CORRETA DO FRAME
+        # -------------------------------
+        hora_atual = hora_inicio + timedelta(minutes=i)
+
+        # >>> PARTE CRÍTICA <<<  
+        # Sincroniza o Sun Position com a hora
+        sun_props.time = (
+            hora_atual.hour +
+            hora_atual.minute / 60 +
+            hora_atual.second / 3600
+        )
+
+        # Força atualização da cena
+        bpy.context.view_layer.update()
+
+        # -------------------------------
+        # VETORES
+        # -------------------------------
+        v_sol = direcao_sol(sol)
+        v_painel = normal_painel(painel)
+
+        dot = max(min(v_sol.dot(v_painel), 1.0), -1.0)
+        ang_inc = math.degrees(math.acos(dot))
+
+        # -------------------------------
+        # ELEVAÇÃO E AZIMUTE DO SUN POSITION
+        # -------------------------------
+        elev = math.degrees(sun_props.sun_elevation)
+        azi  = math.degrees(sun_props.sun_azimuth)
+
+        # -------------------------------
+        # SALVAR
+        # -------------------------------
+        escritor.writerow([
+            frame,
+            hora_atual.strftime("%H:%M"),
+            round(ang_inc, 3),
+            round(elev, 3),
+            round(azi, 3)
+        ])
+
+print("✔ CSV gerado corretamente (frames sincronizados com hora solar)")
